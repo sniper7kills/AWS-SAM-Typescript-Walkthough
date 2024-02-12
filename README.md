@@ -1,18 +1,18 @@
-# AWS-SAM-Typescript-Walkthough
-This repository is a walkthough of my process of creating an AWS SAM application using Typescript.
+# AWS SAM Typescript Walkthrough
 
-While having made several attempts at following tutorials; playing with different samples / starter examples none of them felt right.
-Some I'm sure make more sense; and are better for various reasions, but as a begining they didn't help me understand the process very well.
+This repository serves as a step-by-step guide to creating an AWS SAM application using Typescript.
 
-If I mention an article/tutorial you wrote, please don't take my remarks to heart.
+After attempting various tutorials and experimenting with different samples and starter examples, I found that none of them provided the clarity I was looking for. While some tutorials may be more coherent and suitable for certain reasons, they didn't effectively help me grasp the process as a beginner.
 
-For the remainder of this article I will be using nodejs20.x; I have no idea if it will apply to other versions of node, but don't see why it wouldn't.
+If I reference an article or tutorial you've written, please don't take my comments to heart.
+
+Throughout this walkthrough, I'll be using Node.js version 20.x. Although I haven't tested it with other versions of Node, I don't anticipate any issues.
 
 **Goals:**
 
 1) A typescript based SAM project
 2) Easy builds
-3) 
+3) Understand how Layers work
 
 ## Contents
 - [Where is starts.](#where-it-starts)
@@ -22,7 +22,7 @@ For the remainder of this article I will be using nodejs20.x; I have no idea if 
 
 # Where it starts.
 
-It all starts from the [AWS SAM cli](#TODO).
+It all starts from the [AWS SAM cli](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html).
 
 ```
 $ sam init --runtime nodejs20.x
@@ -701,3 +701,6 @@ Error: NodejsNpmEsbuildBuilder:EsbuildBundle - Esbuild Failed: ✘ [ERROR] Could
  Now we can successfully build; and when we hit the `GET /world` endpoint the function from our Layer is used.
 
  **COMMIT 5**
+
+ # Conclusion
+ And this concludes my TED Talk. I hope you found some value in it.
