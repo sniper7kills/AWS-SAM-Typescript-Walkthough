@@ -504,6 +504,7 @@ npm i typescript --save-dev
 npx tsc --init
 mkdir src
 touch src/index.ts
+cd ../..
 ```
 
 And finally lets create a function and export it.
@@ -516,3 +517,187 @@ export function myCustomFunction() {
 ```
 
 **COMMIT 5**
+
+At this point we should be back in the "sam-app" directory.
+
+While we could build the layer from within its directory, we want to keep it simple and ensure SAM builds it for us. (Hence why we selected makefile over NodeJS)
+
+If we were to try to build now; it would fail as we never created a Makefile; so lets create it.
+
+```make
+# sam-app/src/Layer/src/index.ts
+build-Layer:
+    npm run clean # Clean the environment
+    npm install   # Install our Dependencies
+    npm run build # Build our package // Layer
+
+    # This is a NodeJS Layer; lets make the directory structure in the Artifacts Directory
+    mkdir -p "$(ARTIFACTS_DIR)/nodejs/node_modules"
+
+    # Is the following block needed? Is it correct?
+    # Copy our package.json and -lock.json to the Artifacts Directory
+    cp package.json package-lock.json "$(ARTIFACTS_DIR)/nodejs"
+    # Install the production dependencies
+    npm install --production --prefix "$(ARTIFACTS_DIR)/nodejs"
+    # Remove our package.json file
+    rm "$(ARTIFACTS_DIR)/nodejs/package.json" 
+
+    # Copy our built code to the Artifacts Directory
+    cp -r dist "$(ARTIFACTS_DIR)/nodejs/node_modules"
+```
+
+Now if we try to build; we get a different error:
+```
+$ sam build --use-container
+Starting Build use cache
+Starting Build inside a container
+Cache is invalid, running build and copying resources for following layers (Layer)
+Building layer 'Layer'
+For container layer build, first compatible runtime is chosen as build target for container.
+
+Fetching public.ecr.aws/sam/build-provided:latest-x86_64 Docker container image......
+Mounting /home/sniper7kills/AWS-SAM-Typescript-Walkthough/sam-app/src/Layer as /tmp/samcli/source:ro,delegated, inside runtime container
+
+Build Failed
+Layer: Running CustomMakeBuilder:CopySource
+Layer: Running CustomMakeBuilder:MakeBuild
+Layer: Current Artifacts Directory : /tmp/samcli/artifacts
+npm run clean # Clean the environment
+Error: CustomMakeBuilder:MakeBuild - Make Failed: /bin/sh: npm: command not found
+make: *** [build-Layer] Error 127
+```
+
+OK; now the error doesn't give you an exact "Oh this is what I need to do"; but I'll give you a hint. How does SAM know that this is supposed to be a TypeScript layer? We've only told it that its going to be build using a Makefile.
+
+Lets make some changes to the `template.yaml` file;
+
+> ![IMPORTANT]
+> You are unable to make the following changes from within `Application Composer`; and will no longer be used within this Walkthough. Also note; you may need to make these changes multiple times as [Application Composer tends to overwrite/change these settings](./docs/Issues.md#issue-4) when going back into Application Composer.
+
+```diff
+...
+   Layer:
+     Type: AWS::Serverless::LayerVersion
+     Properties:
+       Description: !Sub
+         - Stack ${AWS::StackName} Layer ${ResourceName}
+         - ResourceName: Layer
+       ContentUri: src/Layer
+       RetentionPolicy: Retain
++      CompatibleRuntimes:
++        - nodejs20.x
+     Metadata:
+       BuildMethod: makefile
+...
+```
+
+Now when we try to build; we don't get an error about npm not being found; but that we are missing the script "clean". Which makes sense as we didn't define it yet.
+
+```diff
+// sam-app/src/Layer/package.json
+ {
+   "name": "layer",
+   "version": "0.0.1",
+   "description": "My Custom Lambda Layer",
+   "main": "dist/index.js",
+   "scripts": {
+     "test": "echo \"Error: no test specified\" && exit 1",
++    "clean": "rm -rf dist node_modules",
++    "build": "npx tsc"
+   },
+   "author": "Sniper7Kills",
+   "license": "UNLICENSED",
+   "devDependencies": {
+     "typescript": "^5.3.3"
+   }
+ }
+```
+
+Lets also modify our tsconfig.json to customize the build.
+
+```diff
+ {
+   "compilerOptions": {
+     ...
+-    // "outDir": "./",
++    "outDir": "./dist",
+   }
+ }
+ ```
+
+ Now we can run `sam build --use-container` without issue; But how can we use this custom function within our Lambda Function?
+
+ Lets make the following changes:
+
+ ```diff
+// sam-app/src/Function/index.mts
+  import { Context, APIGatewayProxyCallback, APIGatewayEvent } from 'aws-lambda';
+ 
++ import { myCustomFunction } from 'layer'
+ 
+  export const handler = (event: APIGatewayEvent, context: Context, callback: APIGatewayProxyCallback): void => {
+      console.log(`Event: ${JSON.stringify(event, null, 2)}`);
+      console.log(`Context: ${JSON.stringify(context, null, 2)}`);
++    myCustomFunction()
+      callback(null, {
+          statusCode: 200,
+          body: JSON.stringify({
+              message: 'hello world',
+          }),
+      });
+  };
+ ```
+
+ Try to build; and you'll get an error:
+ ```
+ Build Failed
+ Running NodejsNpmEsbuildBuilder:CopySource
+ Running NodejsNpmEsbuildBuilder:NpmInstall
+ Running NodejsNpmEsbuildBuilder:EsbuildBundle
+Error: NodejsNpmEsbuildBuilder:EsbuildBundle - Esbuild Failed: ✘ [ERROR] Could not resolve "layer"
+
+    index.mts:3:33:
+      3 │ import { myCustomFunction } from 'layer'
+        ╵                                  ~~~~~~~
+
+  You can mark the path "layer" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+ ```
+
+ To resolve this we need to update the `template.yaml` file:
+
+ ```diff
+   Function:
+     Type: AWS::Serverless::Function
+     Properties:
+       Description: !Sub
+         - Stack ${AWS::StackName} Function ${ResourceName}
+         - ResourceName: Function
+       CodeUri: src/Function
+       Handler: index.handler
+       Runtime: nodejs20.x
+       MemorySize: 3008
+       Timeout: 30
+       Tracing: Active
+       Events:
+         ServerlessRestApiGETworld:
+           Type: Api
+           Properties:
+             Path: /world
+             Method: GET
+       Layers:
+         - !Ref Layer
+     Metadata:
+       BuildMethod: esbuild
+       BuildProperties:
+         EntryPoints:
+           - index.mts
+         External:
+           - '@aws-sdk/*'
+           - aws-sdk
++         - layer
+         Minify: false
+ ```
+
+ Now we can successfully build; and when we hit the `GET /world` endpoint the function from our Layer is used.
+
+ **COMMIT 5**

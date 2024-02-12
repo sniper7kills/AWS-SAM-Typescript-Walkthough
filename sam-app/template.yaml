@@ -59,6 +59,7 @@ Resources:
         External:
           - '@aws-sdk/*'
           - aws-sdk
+          - layer
         Minify: false
   FunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -73,6 +74,8 @@ Resources:
         - ResourceName: Layer
       ContentUri: src/Layer
       RetentionPolicy: Retain
+      CompatibleRuntimes:
+        - nodejs20.x
     Metadata:
       BuildMethod: makefile
 Outputs:

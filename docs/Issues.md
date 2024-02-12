@@ -23,3 +23,8 @@ I nievely thought that "Oh maybe I can customize this within VS Code and provide
 I can overcome the [Issue 2](#issue-2) but to not have any boiler plate code for a lambda layer and forcing people to figure it out doesn't help for adoption, or ease of use.
 
 Maybe... If I could provide custom boiler plates for Application Composer components this could be a non-issue? Just a thought.
+
+# Issue 4
+**Application Composer tends to overwrite/change these settings**
+
+There are some settings that Application Composer will change/overwirte when it updates the template file. I've really only experienced this when modifying an exsting and modified component. But its worth noting as I'm never sure when something was changed without having git enabled.
