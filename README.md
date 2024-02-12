@@ -221,3 +221,14 @@ No Content-Type given. Defaulting to 'application/json'.
 Sweet! we got it running; and we got back the expected "Hello World" message in the response.
 
 **COMMIT 1**
+
+## Adding a New Function
+
+OK; so we now have a TypeScript Lambda function; it shouldn't be hard to create another one.
+
+Lets add a new API endpoint; along with a new Lambda Function. (Again in Application Composer)
+
+![Image 2](./images/2.png)
+
+**COMMIT 2**
+
