@@ -49,6 +49,8 @@ Resources:
           Properties:
             Path: /world
             Method: GET
+      Layers:
+        - !Ref Layer
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -63,6 +65,16 @@ Resources:
     DeletionPolicy: Retain
     Properties:
       LogGroupName: !Sub /aws/lambda/${Function}
+  Layer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: !Sub
+        - Stack ${AWS::StackName} Layer ${ResourceName}
+        - ResourceName: Layer
+      ContentUri: src/Layer
+      RetentionPolicy: Retain
+    Metadata:
+      BuildMethod: makefile
 Outputs:
   HelloWorldApi:
     Description: API Gateway endpoint URL for Prod stage for Hello World function

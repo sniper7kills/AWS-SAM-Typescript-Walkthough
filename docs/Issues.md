@@ -16,3 +16,10 @@ While I'm sure there is some magic because it did choose a "typescript" function
 I can't explain this one; and it actually makes me a little mad. Why does the hello world typescript project use a template that can't be automagically created? Do I really have to copy/paste all of these files and just disregard the boiler plate code?
 
 I nievely thought that "Oh maybe I can customize this within VS Code and provide my own template". But nope. Can't do that.
+
+# Issue 3
+**We see nothing because it didn't provide us with anything.**
+
+I can overcome the [Issue 2](#issue-2) but to not have any boiler plate code for a lambda layer and forcing people to figure it out doesn't help for adoption, or ease of use.
+
+Maybe... If I could provide custom boiler plates for Application Composer components this could be a non-issue? Just a thought.

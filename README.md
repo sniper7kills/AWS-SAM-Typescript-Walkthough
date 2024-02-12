@@ -14,6 +14,12 @@ For the remainder of this article I will be using nodejs20.x; I have no idea if 
 2) Easy builds
 3) 
 
+## Contents
+- [Where is starts.](#where-it-starts)
+- [Initial sam-app Testing](#initial-sam-app-testing)
+- [Adding a New Function](#adding-a-new-function)
+- [Creating a Layer](#creating-a-layer)
+
 # Where it starts.
 
 It all starts from the [AWS SAM cli](#TODO).
@@ -308,3 +314,107 @@ And now it build; and when we send a `GET /world` we recieve a 200 response.
 Its not hard... But it would be nice for this to be customizable.
 
 **COMMIT 3**
+
+## Adding a Layer
+
+Ok, so at this point we *could* consider this walkthough as complete; but there is a major component missing. Lambda Layers.
+
+Lets create a drop a new Lambda Layer and attach it to our Lambda Function.
+
+![Image 3](./images/3.png)
+
+And looking at the "boiler plate" code for the layer we see..... Nothing. [We see nothing because it didn't provide us with anything.](/docs/Issues.md#issue-3) **Thanks AWS!** *And yes; this is regardless of the language you select*
+
+So lets look at what changes it made to our `template.yaml` file.
+
+```diff
+...
+   Function:
+     Type: AWS::Serverless::Function
+     Properties:
+       Description: !Sub
+         - Stack ${AWS::StackName} Function ${ResourceName}
+         - ResourceName: Function
+       CodeUri: src/Function
+       Handler: index.handler
+       Runtime: nodejs20.x
+       MemorySize: 3008
+       Timeout: 30
+       Tracing: Active
+       Events:
+         ServerlessRestApiGETworld:
+           Type: Api
+           Properties:
+             Path: /world
+             Method: GET
++      Layers:
++        - !Ref Layer
+     Metadata:
+       BuildMethod: esbuild
+       BuildProperties:
+         EntryPoints:
+           - index.mts
+         External:
+           - '@aws-sdk/*'
+           - aws-sdk
+         Minify: false
+...
++  Layer:
++    Type: AWS::Serverless::LayerVersion
++    Properties:
++      Description: !Sub
++        - Stack ${AWS::StackName} Layer ${ResourceName}
++        - ResourceName: Layer
++      ContentUri: src/Layer
++      RetentionPolicy: Retain
+```
+
+OK; so we know where we should put our code; but then what? How is it built?
+```
+$ sam build --use-container
+Starting Build use cache
+Starting Build inside a container
+Valid cache found, copying previously built resources for following functions (Function)
+Valid cache found, copying previously built resources for following functions (HelloWorldFunction)
+
+Sourcemap set without --enable-source-maps, adding --enable-source-maps to function HelloWorldFunction NODE_OPTIONS
+
+You are using source maps, note that this comes with a performance hit! Set Sourcemap to false and remove NODE_OPTIONS: --enable-source-maps to disable source maps.
+
+
+Build Succeeded
+
+Built Artifacts  : .aws-sam/build
+Built Template   : .aws-sam/build/template.yaml
+
+Commands you can use next
+=========================
+[*] Validate SAM template: sam validate
+[*] Invoke Function: sam local invoke
+[*] Test Function in the Cloud: sam sync --stack-name {{stack-name}} --watch
+[*] Deploy: sam deploy --guided
+```
+
+But... Our "Layer" wasn't built; and thats because we didn't specify a "Build Method" for the layer.
+
+Looking at the options; we see nodejs20.x; but nothing for typescript.
+Unfortuantly that won't build our typescript. (**If you know otherwise; please let me know!**)
+
+So lets select "makefile" in order to give us some more control of the workflow, and check the changes in our template.
+
+```diff
+...
+   Layer:
+     Type: AWS::Serverless::LayerVersion
+     Properties:
+       Description: !Sub
+         - Stack ${AWS::StackName} Layer ${ResourceName}
+         - ResourceName: Layer
+       ContentUri: src/Layer
+       RetentionPolicy: Retain
++    Metadata:
++      BuildMethod: makefile
+...
+```
+
+**COMMIT 4**
