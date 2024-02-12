@@ -1,0 +1,14 @@
+{
+  "name": "layer",
+  "version": "0.0.1",
+  "description": "My Custom Lambda Layer",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Sniper7Kills",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

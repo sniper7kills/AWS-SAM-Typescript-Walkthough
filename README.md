@@ -418,3 +418,101 @@ So lets select "makefile" in order to give us some more control of the workflow,
 ```
 
 **COMMIT 4**
+
+Before we start to code the layer I want to explain how a lambda layer works; at least from my understanding. (**Please let me know where I'm wrong!**)
+
+- A layer is simply a zip containing a folder structure that will be mounted onto `/opt`.
+- Different runtimes will have different `/opt` paths in the runtimes `$PATH` (I.E. Node, Python, Etc. know to look in specific `/opt` directories for files)
+
+NodeJS in particular loads the following paths into the `NODE_PATH` variable. [Ref](https://docs.aws.amazon.com/lambda/latest/dg/packaging-layers.html)
+```
+layer.zip/
+└── nodejs/
+    ├── node_modules
+    ├── node14/
+    │   └── node_modules
+    ├── node16/
+    │   └── node_modules
+    └── nodejs18/
+        └── node_modules
+```
+
+With this in mind; I would like to take a momment and explain an issue of frustration I've had with tutorial up to this point.
+
+Why hasn't anyone made the semi-obvious statement that for NodeJS layers; you **MUST** build your common components and libraries as packages.
+
+Looking now, it seems obvious. But the way its done in some tutorials or examples makes no sense to me.
+
+### Coding The Layer
+
+With the knowladge that we will be building a package lets get started.
+
+```sh
+mkdir src/Layer
+cd src/Layer
+npm init
+```
+And we'll go though the process of creating the package.
+
+```
+This utility will walk you through creating a package.json file.
+It only covers the most common items, and tries to guess sensible defaults.
+
+See `npm help init` for definitive documentation on these fields
+and exactly what they do.
+
+Use `npm install <pkg>` afterwards to install a package and
+save it as a dependency in the package.json file.
+
+Press ^C at any time to quit.
+package name: (layer) layer
+```
+> [!IMPORTANT] 
+> This will be the most important question. Because of the way layers work, we want to ensure that we don't acidently overwrite something provided by another layer. (*Again, not fully sure how this works...*) It's also the name we'll use when importing anything we need within our functions.
+
+```
+version: (1.0.0) 0.0.1
+description: My Custom Lambda Layer
+entry point: (index.js) dist/index.js
+test command:
+git repository:
+keywords:
+author: Sniper7Kills
+license: (ISC) UNLICENSED
+About to write to /home/sniper7kills/AWS-SAM-Typescript-Walkthough/sam-app/src/Layer/package.json:
+
+{
+  "name": "layer",
+  "version": "0.0.1",
+  "description": "My Custom Lambda Layer",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Sniper7Kills",
+  "license": "UNLICENSED"
+}
+
+
+Is this OK? (yes) yes
+```
+
+Now we need to enable typescript.
+
+```sh
+npm i typescript --save-dev
+npx tsc --init
+mkdir src
+touch src/index.ts
+```
+
+And finally lets create a function and export it.
+
+```typescript
+// sam-app/src/Layer/src/index.ts
+export function myCustomFunction() {
+  console.log('my custom function')
+}
+```
+
+**COMMIT 5**
