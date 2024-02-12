@@ -2,6 +2,9 @@
   "name": "function",
   "version": "1.0.0",
   "type": "module",
+  "dependencies": {
+    "esbuild": "0.20.0"
+  },
   "devDependencies": {
     "@types/aws-lambda": "~8"
   }

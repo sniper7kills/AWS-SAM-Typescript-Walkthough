@@ -232,3 +232,79 @@ Lets add a new API endpoint; along with a new Lambda Function. (Again in Applica
 
 **COMMIT 2**
 
+OK; so now I get to start with some complaints and issues I have.
+
+I'm only going to briefly touch on them in this document; but I'll link to where I go into more detail.
+
+- [Application Compose generates boiler plate too quickly!](./docs/Issues.md#issue-1)
+- [Boiler Plate doesn't match expected code from "hello world"](./docs//Issues.md#issue-2)
+
+OK; Ignoring those two issues; lets built and run it.
+
+```
+$ sam build --use-container
+Starting Build use cache
+Starting Build inside a container
+Cache is invalid, running build and copying resources for following functions (Function)
+Building codeuri: /srv/samba/sda/RunbookSolutions/appsyncTests/AWS-SAM-Typescript-Walkthough/sam-app/src/Function runtime: nodejs20.x metadata: {'BuildMethod': 'esbuild', 'BuildProperties': {'EntryPoints': ['index.mts'], 'External': ['@aws-sdk/*',     
+'aws-sdk'], 'Minify': False}} architecture: x86_64 functions: Function
+Valid cache found, copying previously built resources for following functions (HelloWorldFunction)
+
+Fetching public.ecr.aws/sam/build-nodejs20.x:latest-x86_64 Docker container image......
+Mounting /srv/samba/sda/RunbookSolutions/appsyncTests/AWS-SAM-Typescript-Walkthough/sam-app/src/Function as /tmp/samcli/source:ro,delegated, inside runtime container
+
+Build Failed
+ Running NodejsNpmEsbuildBuilder:CopySource
+ Running NodejsNpmEsbuildBuilder:NpmInstall
+ Running NodejsNpmEsbuildBuilder:EsbuildBundle
+Error: NodejsNpmEsbuildBuilder:EsbuildBundle - Esbuild Failed: Cannot find esbuild. esbuild must be installed on the host machine to use this feature. It is recommended to be installed on the PATH, but can also be included as a project dependency. 
+```
+
+Really? I can't even **build** the boiler plate code.
+
+So we need to make some changes:
+1) modify `src/Function/package.json`
+```diff
+ {
+   "name": "function",
+   "version": "1.0.0",
+   "type": "module",
++  "dependencies": {
++    "esbuild": "0.20.0"
++  },
+   "devDependencies": {
+     "@types/aws-lambda": "~8"
+   }
+ }
+```
+
+While were in here lets also "improve" the default typescript file.
+1) modify `src/Function/index.mts`
+
+```diff
+- import { Handler } from "aws-lambda";
++ import { Context, APIGatewayProxyCallback, APIGatewayEvent } from 'aws-lambda';
+
+- export const handler: Handler<object, object> = async event => {
+-  // Log the event argument for debugging and for use in local development.
+-  console.log(JSON.stringify(event, undefined, 2));
+- 
+-  return {};
+- };
++ export const handler = (event: APIGatewayEvent, context: Context, callback: APIGatewayProxyCallback): void => {
++    console.log(`Event: ${JSON.stringify(event, null, 2)}`);
++    console.log(`Context: ${JSON.stringify(context, null, 2)}`);
++    callback(null, {
++        statusCode: 200,
++        body: JSON.stringify({
++            message: 'hello world',
++        }),
++    });
++};
+```
+
+And now it build; and when we send a `GET /world` we recieve a 200 response.
+
+Its not hard... But it would be nice for this to be customizable.
+
+**COMMIT 3**

@@ -1,8 +1,12 @@
-import { Handler } from "aws-lambda";
+import { Context, APIGatewayProxyCallback, APIGatewayEvent } from 'aws-lambda';
 
-export const handler: Handler<object, object> = async event => {
-  // Log the event argument for debugging and for use in local development.
-  console.log(JSON.stringify(event, undefined, 2));
-
-  return {};
+export const handler = (event: APIGatewayEvent, context: Context, callback: APIGatewayProxyCallback): void => {
+    console.log(`Event: ${JSON.stringify(event, null, 2)}`);
+    console.log(`Context: ${JSON.stringify(context, null, 2)}`);
+    callback(null, {
+        statusCode: 200,
+        body: JSON.stringify({
+            message: 'hello world',
+        }),
+    });
 };
